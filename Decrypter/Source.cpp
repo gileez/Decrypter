@@ -125,7 +125,7 @@ void solveCurrentChar(const short& msgSize, int& marker, bool& reverse, const En
 	int applyMultiplier = 0; // how many times should the operation be performed on this cell 
 
 	// pass on first round?
-	if ((!reverse && marker + d.lengthToOperateOn > charIndex && marker <= charIndex) || (reverse && marker - d.lengthToOperateOn < charIndex && marker => charIndex)) {
+	if ((!reverse && marker + d.lengthToOperateOn > charIndex && marker <= charIndex) || (reverse && marker - d.lengthToOperateOn < charIndex && marker >= charIndex)) {
 		// we will step on the cur char index on the first pass by
 		applyMultiplier = 1;
 	}
@@ -166,6 +166,7 @@ void solveCurrentChar(const short& msgSize, int& marker, bool& reverse, const En
 		for (int i = applyMultiplier; i > 0; i--) {
 			currentChar ^= d.operationParameter;
 		}
+		break;
 	case 1:
 		currentChar += d.operationParameter * applyMultiplier;
 		break;
