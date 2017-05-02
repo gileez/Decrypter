@@ -95,7 +95,7 @@ std::vector<BYTE> decrypt(std::vector<EncryptionStepDescriptor> &descriptors, st
 	std::cout << "decrypted with key: TODO write key\n";
 	return msg;
 }
-
+/*
 bool isValidChar(BYTE c) {
 	if ((65 <= (int)c && (int)c <= 90) ||
 		(97 <= (int)c && (int)c <= 122) ||
@@ -106,9 +106,75 @@ bool isValidChar(BYTE c) {
 
 	return false;
 }
-void solveCurrentChar(const short& msgSize, int& marker, bool& reverse, const EncryptionStepDescriptor& d, BYTE& currentChar) {
-	int pos = marker;
-	int reps = msgSize / d.lengthToOperateOn;
+*/
+
+bool isValidChar(BYTE c) {
+	if (('a' <= c && c <= 'z') ||
+		('A' <= c && c <= 'Z') ||
+		(c == '.') ||
+		(c == '?') ||
+		(c == ','))
+		return true;
+
+	return false;
+}
+
+void solveCurrentChar(const short& msgSize, int& marker, bool& reverse, const EncryptionStepDescriptor& d, BYTE& currentChar, const int& charIndex) {
+	//int pos = marker;
+	
+	int applyMultiplier = 0; // how many times should the operation be performed on this cell 
+
+	// pass on first round?
+	if ((!reverse && marker + d.lengthToOperateOn > charIndex && marker <= charIndex) || (reverse && marker - d.lengthToOperateOn < charIndex && marker => charIndex)) {
+		// we will step on the cur char index on the first pass by
+		applyMultiplier = 1;
+	}
+	if (d.lengthToOperateOn + marker < msgSize - 1) {
+		// no direction change
+		marker = reverse ? marker - d.lengthToOperateOn : marker + d.lengthToOperateOn;
+		if (applyMultiplier == 0) return; // nothing else to do this round
+	}
+	else {
+		// assuming at least one direction change
+		int L = reverse ? (d.lengthToOperateOn - marker) : (d.lengthToOperateOn - (msgSize - marker)); // lengthToOperate not including steps of the first pass
+		int dc =  L/msgSize; // how many direction changes do we have? (not including first one)
+		if (dc + 1 % 2 == 1) reverse = !reverse; // odd number of direction changes means we need to change the final direction. adding one for the first direction change
+		applyMultiplier += dc; // each time we do a direction change that includes a full pass on the vector we will also need to do the calculation again
+		int leftOvers = L % (msgSize);
+		// determine if leftOvers result in another step on charIndex
+		if (reverse) {
+			//set marker
+			marker = msgSize - leftOvers;
+			if (marker < charIndex) {
+				// passed the index on the last run too
+				applyMultiplier++;
+			}
+		}
+		else {
+			//set marker
+			marker = leftOvers;
+			if (marker > charIndex) {
+				// passed the index on the last run too
+				applyMultiplier++;
+			}
+		}
+	} // end direction change logic
+
+	
+	switch (d.operationCode) {
+	case 0:
+		for (int i = applyMultiplier; i > 0; i--) {
+			currentChar ^= d.operationParameter;
+		}
+	case 1:
+		currentChar += d.operationParameter * applyMultiplier;
+		break;
+	case 2:
+		currentChar -= d.operationParameter * applyMultiplier;
+		break;
+	}
+	// set marker
+	// set reverse
 
 }
 
@@ -123,45 +189,13 @@ bool decryptAndTest(const std::vector<EncryptionStepDescriptor> &descriptors,con
 		currentChar = msg[currentIndex];
 		// for each descriptor
 		for (auto d : descriptors) {
-			solveCurrentChar(msgSize, marker, reverse, d, currentChar);
-			// for counter of times to execute
-			for (int i = d.lengthToOperateOn; i > 0; i--) {
-				// perform operation on cur byte
-				if (marker == currentIndex) {
-					switch (d.operationCode) {
-					case 0:
-						currentChar ^= d.operationParameter;
-						break;
-					case 1:
-						currentChar += d.operationParameter;
-						break;
-					case 2:
-						currentChar -= d.operationParameter;
-						break;
-					}
-				}
-				// step marker:
-				// if last byte and not reverse:
-				if (marker == (msgSize - 1) && !reverse) {
-					reverse = true;
-				}
-				// if first byte and reverse:
-				else if (marker == 0 && reverse) {
-					reverse = false;
-				}
-				else if (reverse) {
-					marker--;
-				}
-				else marker++;
-			}
+			solveCurrentChar(msgSize, marker, reverse, d, currentChar, currentIndex);
 		} // end descriptors cycle
 		if (!isValidChar(currentChar))
 			return false;
 
 		res[marker] = currentChar;
 	}
-
-	std::cout << "decrypted with key: TODO write key\n";
 	return true;
 }
 
