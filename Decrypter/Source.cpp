@@ -179,7 +179,7 @@ void solveCurrentChar(const short& msgSize, int& marker, bool& reverse, const En
 	}
 }
 
-bool decryptAndTest(const std::vector<EncryptionStepDescriptor> &descriptors,const std::vector<BYTE>& msg, std::vector<BYTE>& res) {
+bool decryptAndTestTooSmart(const std::vector<EncryptionStepDescriptor> &descriptors,const std::vector<BYTE>& msg, std::vector<BYTE>& res) {
 	// set marker at 0
 	int marker = 0;
 	bool reverse = false;
@@ -193,6 +193,13 @@ bool decryptAndTest(const std::vector<EncryptionStepDescriptor> &descriptors,con
 			solveCurrentChar(msgSize, marker, reverse, d, currentChar, currentIndex);
 		} // end descriptors cycle
 		if (!isValidChar(currentChar))
+			return false; // no point in look at other characters. this one didn't make it
+
+		res[currentIndex] = currentChar;
+		marker = 0; // next char has to start from scratch
+	}
+	return true;
+}
 			return false;
 
 		res[marker] = currentChar;
