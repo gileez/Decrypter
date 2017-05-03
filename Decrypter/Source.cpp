@@ -276,26 +276,69 @@ int main() {
 	
 	// get descriptors
 	// from file:
-	//std::vector<EncryptionStepDescriptor> descriptors = convertDescriptors(vec);
+	std::vector<EncryptionStepDescriptor> olddescriptors = convertDescriptors(vec);
 	
 	// BRUTE FORCE
 	int counter = 0;
-	short MAX_OPERATION = 150;
-	short MAX_LENGTH = 50;
+	short MAX_OPERATION = UCHAR_MAX;
+	int MAX_LENGTH = 200;
 	std::vector<EncryptionStepDescriptor> descriptors;
-	std::vector<BYTE> res;
-	res.reserve(msg.size());
+	std::vector<BYTE> res(msg);
+	std::vector<EncryptionStepDescriptor> AKEYS;
+	AKEYS.reserve(5);
 	descriptors.reserve(3);
 	for (short i = 0; i < 3; i++)
 		descriptors.push_back(sample);
 	EncryptionStepDescriptor *A, *B, *C;
+	EncryptionStepDescriptor Ares;
 	// link pointers
 	A = & descriptors[0];
 	B = & descriptors[1];
 	C = & descriptors[2];
+	bool Alocked = false;
+	unsigned char max = 0;
+	const int MIN_LOCKED = 1;
 	// A rep
-	for (uint32_t ar = 1; ar < MAX_LENGTH; ar++) {
-		A->lengthToOperateOn = ar;
+	while (!Alocked) {
+		//for (uint32_t ar = 1; ar < MAX_LENGTH; ar++) {
+		int ar = 0; // DELETE ME
+		for (BYTE av = 1; av < MAX_OPERATION; av++) {
+			A->lengthToOperateOn = MIN_LOCKED;
+			A->operationParameter = av;
+			for (BYTE ao = 0; ao < 3; ao++) {
+				A->operationCode = ao;
+				counter++;
+
+				if (counter % 1000000 == 0) std::cout << "Attempting with keys: A{ " << +descriptors[0].operationCode << ", " << +descriptors[0].operationParameter << ", " << +descriptors[0].lengthToOperateOn << " }\n";
+				if (decryptAndTest(std::vector<EncryptionStepDescriptor>(descriptors.begin(), descriptors.begin() + 1), std::vector<BYTE>(msg.begin(), msg.begin() + A->lengthToOperateOn), res)) {
+					// we got a live one
+					std::cout << "this configuration works for "<< A->lengthToOperateOn <<" chars\n";
+					std::cout << "A{ " << +descriptors[0].operationCode << ", " << +descriptors[0].operationParameter << ", " << +descriptors[0].lengthToOperateOn << " }\n";
+					// try pushing it further:
+					for (int pushit = 0; pushit < msg.size(); pushit ++) {
+						A->lengthToOperateOn++;
+						if (decryptAndTest(std::vector<EncryptionStepDescriptor>(descriptors.begin(), descriptors.begin() + 1), std::vector<BYTE>(msg.begin(), msg.begin() + A->lengthToOperateOn), res)) {
+							std::cout << ".";
+							continue; // keep pushing baby
+						}
+						unsigned char lastSuccess = (unsigned char) (A->lengthToOperateOn-1);
+						std::cout << "config worked for up to " << (int)lastSuccess << " chars in a row:\n";
+						printVector(std::vector<BYTE>(res.begin(), res.begin() + lastSuccess));
+						if ((int)lastSuccess > (int)max) {
+							max = lastSuccess;
+							Ares.lengthToOperateOn = lastSuccess;
+							Ares.operationCode = A->operationCode;
+							Ares.operationParameter = A->operationParameter;
+						}
+						break; // this isn't going anywhere. lets get out of this loop
+					} // end while (pushing it further)
+				} //end we got a live one
+			}
+					
+		}
+		// =========REMOVE ME============
+		break;// !!!!!!!!!!!!!!!!!!!!!
+		//===============================
 		// B rep
 		for (uint32_t br = 1; br < MAX_LENGTH; br++) {
 			B->lengthToOperateOn = br;
