@@ -304,29 +304,29 @@ int main() {
 				C->lengthToOperateOn = cr;
 				if (ar + br + cr < msg.size()) continue;
 				// A value
-				for (unsigned char av = 0; av < MAX_OPERATION; av++) {
+				for (BYTE av = 1; av < MAX_OPERATION; av++) {
 					A->operationParameter = av;
 					// B value
-					for (unsigned char bv = 0; bv < MAX_OPERATION; bv++) {
+					for (BYTE bv = 1; bv < MAX_OPERATION; bv++) {
 						B->operationParameter = bv;
 						// C value
-						for (unsigned char cv = 0; cv < MAX_OPERATION; cv++) {
+						for (BYTE cv = 1; cv < MAX_OPERATION; cv++) {
 							C->operationParameter = cv;
 							// A operator
-							for (short ao = 0; ao < 3; ao++) {
+							for (BYTE ao = 0; ao < 3; ao++) {
 								A->operationCode = ao;
 								// B operator
-								for (short bo = 0; bo < 3; bo++) {
+								for (BYTE bo = 0; bo < 3; bo++) {
 									if (bo == ao) continue;
 									B->operationCode = bo;
 									// C operator
-									for (short co = 0; co < 3; co++) {
+									for (BYTE co = 0; co < 3; co++) {
 										if (co == bo) continue;
 										C->operationCode = co;
 
 										// LETS DO IT
 										counter++;
-										if (counter % 1000 == 0) {
+										if (counter % 10000 == 0) {
 											std::cout << "Attempting with keys: A{"
 												<< +descriptors[0].operationCode << "," << +descriptors[0].operationParameter << "," << +descriptors[0].lengthToOperateOn
 												<< "}, B{"
@@ -346,6 +346,7 @@ int main() {
 				}
 			}
 		}
+		std::cout << "OK THEN...";
 	}
 	std::cout << "FAIL";	
 }
