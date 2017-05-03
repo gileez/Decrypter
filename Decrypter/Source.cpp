@@ -4,6 +4,7 @@
 #include <iterator>;
 #include <cstdint>;
 #include <iostream>;
+#include <cassert>;
 typedef unsigned char BYTE;
 // #define MAX_OPERATION 120; TODO why did this not work?
 
@@ -125,26 +126,27 @@ void solveCurrentChar(const short& msgSize, int& marker, bool& reverse, const En
 	int applyMultiplier = 0; // how many times should the operation be performed on this cell 
 
 	// pass on first round?
-	if ((!reverse && marker + d.lengthToOperateOn > charIndex && marker <= charIndex) || (reverse && marker - d.lengthToOperateOn < charIndex && marker >= charIndex)) {
+	if ((!reverse && marker + d.lengthToOperateOn > charIndex && marker <= charIndex) || (reverse && (int) (marker - d.lengthToOperateOn) < charIndex && marker >= charIndex)) {
 		// we will step on the cur char index on the first pass by
 		applyMultiplier = 1;
 	}
-	if (d.lengthToOperateOn + marker < msgSize - 1) {
+	if ((!reverse && d.lengthToOperateOn + marker < msgSize) || (reverse && d.lengthToOperateOn < marker)) {
 		// no direction change
 		marker = reverse ? marker - d.lengthToOperateOn : marker + d.lengthToOperateOn;
 		if (applyMultiplier == 0) return; // nothing else to do this round
 	}
 	else {
 		// assuming at least one direction change
-		int L = reverse ? (d.lengthToOperateOn - marker) : (d.lengthToOperateOn - (msgSize - marker)); // lengthToOperate not including steps of the first pass
+		int L = reverse ? (d.lengthToOperateOn - marker) : (int)(d.lengthToOperateOn - (msgSize - marker)); // lengthToOperate not including steps of the first pass
 		int dc =  L/msgSize; // how many direction changes do we have? (not including first one)
 		if (dc + 1 % 2 == 1) reverse = !reverse; // odd number of direction changes means we need to change the final direction. adding one for the first direction change
 		applyMultiplier += dc; // each time we do a direction change that includes a full pass on the vector we will also need to do the calculation again
-		int leftOvers = L % (msgSize);
+		auto leftOvers = L % (msgSize);
+		assert(0 <= leftOvers && leftOvers < msgSize);
 		// determine if leftOvers result in another step on charIndex
 		if (reverse) {
 			//set marker
-			marker = msgSize - leftOvers;
+			marker = msgSize - 1 - leftOvers;
 			if (marker < charIndex) {
 				// passed the index on the last run too
 				applyMultiplier++;
@@ -160,7 +162,8 @@ void solveCurrentChar(const short& msgSize, int& marker, bool& reverse, const En
 		}
 	} // end direction change logic
 
-	
+	if (applyMultiplier == 0) return; // try to save on the switch? TODO check if this is worth while
+
 	switch (d.operationCode) {
 	case 0:
 		for (int i = applyMultiplier; i > 0; i--) {
@@ -174,9 +177,6 @@ void solveCurrentChar(const short& msgSize, int& marker, bool& reverse, const En
 		currentChar -= d.operationParameter * applyMultiplier;
 		break;
 	}
-	// set marker
-	// set reverse
-
 }
 
 bool decryptAndTest(const std::vector<EncryptionStepDescriptor> &descriptors,const std::vector<BYTE>& msg, std::vector<BYTE>& res) {
