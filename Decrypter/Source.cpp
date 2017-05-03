@@ -200,6 +200,50 @@ bool decryptAndTestTooSmart(const std::vector<EncryptionStepDescriptor> &descrip
 	}
 	return true;
 }
+
+bool decryptAndTest(const std::vector<EncryptionStepDescriptor> &descriptors, const std::vector<BYTE>& msg, std::vector<BYTE>& res) {
+	// set marker at 0
+	int marker = 0;
+	bool reverse = false;
+	short msgSize = msg.size();
+	BYTE currentChar;
+	// for each letter
+	for (int currentIndex = 0; currentIndex < msgSize; currentIndex++) {
+		currentChar = msg[currentIndex];
+		// for each descriptor
+		for (auto d : descriptors) {
+			// for counter of times to execute
+			for (int i = d.lengthToOperateOn; i > 0; i--) {
+				// perform operation on cur byte
+				if (marker == currentIndex) {
+					switch (d.operationCode) {
+					case 0:
+						currentChar ^= d.operationParameter;
+						break;
+					case 1:
+						currentChar += d.operationParameter;
+						break;
+					case 2:
+						currentChar -= d.operationParameter;
+						break;
+					}
+				}
+				// step marker:
+				// if last byte and not reverse:
+				if (marker == (msgSize - 1) && !reverse) {
+					reverse = true;
+				}
+				// if first byte and reverse:
+				else if (marker == 0 && reverse) {
+					reverse = false;
+				}
+				else if (reverse) {
+					marker--;
+				}
+				else marker++;
+			}
+		} // end descriptors cycle
+		if (!isValidChar(currentChar))
 			return false;
 
 		res[marker] = currentChar;
