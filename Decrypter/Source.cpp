@@ -114,7 +114,8 @@ bool isValidChar(BYTE c) {
 		('A' <= c && c <= 'Z') ||
 		(c == '.') ||
 		(c == '?') ||
-		(c == ','))
+		(c == ',') ||
+		(c == ' '))
 		return true;
 
 	return false;
