@@ -203,13 +203,13 @@ bool decryptAndTestTooSmart(const std::vector<EncryptionStepDescriptor> &descrip
 }
 
 bool decryptAndTest(const std::vector<EncryptionStepDescriptor> &descriptors, const std::vector<BYTE>& msg, std::vector<BYTE>& res) {
-	// set marker at 0
-	int marker = 0;
 	bool reverse = false;
 	short msgSize = msg.size();
 	BYTE currentChar;
 	// for each letter
 	for (int currentIndex = 0; currentIndex < msgSize; currentIndex++) {
+		int marker = 0;
+		reverse = false;
 		currentChar = msg[currentIndex];
 		// for each descriptor
 		for (auto d : descriptors) {
@@ -247,7 +247,7 @@ bool decryptAndTest(const std::vector<EncryptionStepDescriptor> &descriptors, co
 		if (!isValidChar(currentChar))
 			return false;
 
-		res[marker] = currentChar;
+		res[currentIndex] = currentChar;
 	}
 	return true;
 }
